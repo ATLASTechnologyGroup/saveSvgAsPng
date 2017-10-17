@@ -1,4 +1,4 @@
-(function() {
+(function () {
   var out$ = typeof exports != 'undefined' && exports || typeof define != 'undefined' && {} || this;
 
   var doctype = '<?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd" [<!ENTITY nbsp "&#160;">]>';
@@ -14,38 +14,38 @@
   }
 
   function isExternal(url) {
-    return url && url.lastIndexOf('http',0) == 0 && url.lastIndexOf(window.location.host) == -1;
+    return url && url.lastIndexOf('http', 0) == 0 && url.lastIndexOf(window.location.host) == -1;
   }
 
   function inlineImages(el, callback) {
     requireDomNode(el);
 
     var images = el.querySelectorAll('image'),
-        left = images.length,
-        checkDone = function() {
-          if (left === 0) {
-            callback();
-          }
-        };
+      left = images.length,
+      checkDone = function () {
+        if (left === 0) {
+          callback();
+        }
+      };
 
     checkDone();
     for (var i = 0; i < images.length; i++) {
-      (function(image) {
+      (function (image) {
         var href = image.getAttributeNS("http://www.w3.org/1999/xlink", "href");
         if (href) {
           if (isExternal(href.value)) {
-            console.warn("Cannot render embedded images linking to external hosts: "+href.value);
+            console.warn("Cannot render embedded images linking to external hosts: " + href.value);
             return;
           }
         }
         var canvas = document.createElement('canvas');
         var ctx = canvas.getContext('2d');
         var img = new Image();
-        img.crossOrigin="anonymous";
+        img.crossOrigin = "anonymous";
         href = href || image.getAttribute('href');
         if (href) {
           img.src = href;
-          img.onload = function() {
+          img.onload = function () {
             canvas.width = img.width;
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
@@ -53,8 +53,8 @@
             left--;
             checkDone();
           }
-          img.onerror = function() {
-            console.log("Could not load "+href);
+          img.onerror = function () {
+            console.log("Could not load " + href);
             left--;
             checkDone();
           }
@@ -70,27 +70,34 @@
     var selectorRemap = options.selectorRemap;
     var modifyStyle = options.modifyStyle;
     var css = "";
+
     // each font that has extranl link is saved into queue, and processed
     // asynchronously
     var fontsQueue = [];
     var sheets = document.styleSheets;
+
+    //Only GET the map style sheet
+    sheets = $(sheets).filter(function () {
+      return this.href && this.href.indexOf("maps.css") >= 0;
+    });
+
     for (var i = 0; i < sheets.length; i++) {
       try {
         var rules = sheets[i].cssRules;
       } catch (e) {
-        console.warn("Stylesheet could not be loaded: "+sheets[i].href);
+        console.warn("Stylesheet could not be loaded: " + sheets[i].href);
         continue;
       }
 
       if (rules != null) {
-        for (var j = 0, match; j < rules.length; j++, match = null) {
+        for (var j = 0, match; j < rules.length; j++ , match = null) {
           var rule = rules[j];
-          if (typeof(rule.style) != "undefined") {
+          if (typeof (rule.style) != "undefined") {
             var selectorText;
 
             try {
               selectorText = rule.selectorText;
-            } catch(err) {
+            } catch (err) {
               console.warn('The following CSS rule has an invalid selector: "' + rule + '"', err);
             }
 
@@ -98,7 +105,7 @@
               if (selectorText) {
                 match = el.querySelector(selectorText) || el.parentNode.querySelector(selectorText);
               }
-            } catch(err) {
+            } catch (err) {
               console.warn('Invalid CSS selector "' + selectorText + '"', err);
             }
 
@@ -106,7 +113,7 @@
               var selector = selectorRemap ? selectorRemap(rule.selectorText) : rule.selectorText;
               var cssText = modifyStyle ? modifyStyle(rule.style.cssText) : rule.style.cssText;
               css += selector + " { " + cssText + " }\n";
-            } else if(rule.cssText.match(/^@font-face/)) {
+            } else if (rule.cssText.match(/^@font-face/)) {
               // below we are trying to find matches to external link. E.g.
               // @font-face {
               //   // ...
@@ -180,7 +187,7 @@
       }
 
       // If you see this error message, you probably need to update code above.
-      console.error('Unknown font format for ' + fontUrl+ '; Fonts may not be working correctly');
+      console.error('Unknown font format for ' + fontUrl + '; Fonts may not be working correctly');
       return 'application/octet-stream';
     }
 
@@ -224,7 +231,7 @@
           css += font.text.replace(font.fontUrlRegexp, dataUrl) + '\n';
 
           // schedule next font download on next tick.
-          setTimeout(function() {
+          setTimeout(function () {
             processFontQueue(queue)
           }, 0);
         }
@@ -238,7 +245,7 @@
       var len = bytes.byteLength;
 
       for (var i = 0; i < len; i++) {
-          binary += String.fromCharCode(bytes[i]);
+        binary += String.fromCharCode(bytes[i]);
       }
 
       return window.btoa(binary);
@@ -256,14 +263,14 @@
 
   function reEncode(data) {
     data = encodeURIComponent(data);
-    data = data.replace(/%([0-9A-F]{2})/g, function(match, p1) {
-      var c = String.fromCharCode('0x'+p1);
+    data = data.replace(/%([0-9A-F]{2})/g, function (match, p1) {
+      var c = String.fromCharCode('0x' + p1);
       return c === '%' ? '%25' : c;
     });
     return decodeURIComponent(data);
   }
 
-  out$.prepareSvg = function(el, options, cb) {
+  out$.prepareSvg = function (el, options, cb) {
     requireDomNode(el);
 
     options = options || {};
@@ -271,20 +278,20 @@
     options.responsive = options.responsive || false;
     var xmlns = "http://www.w3.org/2000/xmlns/";
 
-    inlineImages(el, function() {
+    inlineImages(el, function () {
       var outer = document.createElement("div");
       var clone = el.cloneNode(true);
       var width, height;
-      if(el.tagName == 'svg') {
+      if (el.tagName == 'svg') {
         width = options.width || getDimension(el, clone, 'width');
         height = options.height || getDimension(el, clone, 'height');
-      } else if(el.getBBox) {
+      } else if (el.getBBox) {
         var box = el.getBBox();
         width = box.x + box.width;
         height = box.y + box.height;
         clone.setAttribute('transform', clone.getAttribute('transform').replace(/translate\(.*?\)/, ''));
 
-        var svg = document.createElementNS('http://www.w3.org/2000/svg','svg')
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
         svg.appendChild(clone)
         clone = svg;
       } else {
@@ -349,8 +356,8 @@
     });
   }
 
-  out$.svgAsDataUri = function(el, options, cb) {
-    out$.prepareSvg(el, options, function(svg) {
+  out$.svgAsDataUri = function (el, options, cb) {
+    out$.prepareSvg(el, options, function (svg) {
       var uri = 'data:image/svg+xml;base64,' + window.btoa(reEncode(doctype + svg));
       if (cb) {
         cb(uri);
@@ -358,26 +365,26 @@
     });
   }
 
-  out$.svgAsPngUri = function(el, options, cb) {
+  out$.svgAsPngUri = function (el, options, cb) {
     requireDomNode(el);
 
     options = options || {};
     options.encoderType = options.encoderType || 'image/png';
     options.encoderOptions = options.encoderOptions || 0.8;
 
-    var convertToPng = function(src, w, h) {
+    var convertToPng = function (src, w, h) {
       var canvas = document.createElement('canvas');
       var context = canvas.getContext('2d');
       canvas.width = w;
       canvas.height = h;
 
-      if(options.canvg) {
+      if (options.canvg) {
         options.canvg(canvas, src);
       } else {
         context.drawImage(src, 0, 0);
       }
 
-      if(options.backgroundColor){
+      if (options.backgroundColor) {
         context.globalCompositeOperation = 'destination-over';
         context.fillStyle = options.backgroundColor;
         context.fillRect(0, 0, canvas.width, canvas.height);
@@ -397,17 +404,17 @@
       cb(png);
     }
 
-    if(options.canvg) {
+    if (options.canvg) {
       out$.prepareSvg(el, options, convertToPng);
     } else {
-      out$.svgAsDataUri(el, options, function(uri) {
+      out$.svgAsDataUri(el, options, function (uri) {
         var image = new Image();
 
-        image.onload = function() {
+        image.onload = function () {
           convertToPng(image, image.width, image.height);
         }
 
-        image.onerror = function() {
+        image.onerror = function () {
           console.error(
             'There was an error loading the data URI as an image on the following SVG\n',
             window.atob(uri.slice(26)), '\n',
@@ -420,7 +427,7 @@
     }
   }
 
-  out$.download = function(name, uri) {
+  out$.download = function (name, uri) {
     if (navigator.msSaveOrOpenBlob) {
       navigator.msSaveOrOpenBlob(uriToBlob(uri), name);
     } else {
@@ -434,8 +441,8 @@
           var blob = uriToBlob(uri);
           var url = URL.createObjectURL(blob);
           saveLink.href = url;
-          saveLink.onclick = function() {
-            requestAnimationFrame(function() {
+          saveLink.onclick = function () {
+            requestAnimationFrame(function () {
               URL.revokeObjectURL(url);
             })
           };
@@ -460,30 +467,30 @@
     for (var i = 0; i < byteString.length; i++) {
       intArray[i] = byteString.charCodeAt(i);
     }
-    return new Blob([buffer], {type: mimeString});
+    return new Blob([buffer], { type: mimeString });
   }
 
-  out$.saveSvg = function(el, name, options) {
+  out$.saveSvg = function (el, name, options) {
     requireDomNode(el);
 
     options = options || {};
-    out$.svgAsDataUri(el, options, function(uri) {
+    out$.svgAsDataUri(el, options, function (uri) {
       out$.download(name, uri);
     });
   }
 
-  out$.saveSvgAsPng = function(el, name, options) {
+  out$.saveSvgAsPng = function (el, name, options) {
     requireDomNode(el);
 
     options = options || {};
-    out$.svgAsPngUri(el, options, function(uri) {
+    out$.svgAsPngUri(el, options, function (uri) {
       out$.download(name, uri);
     });
   }
 
   // if define is defined create as an AMD module
   if (typeof define !== 'undefined') {
-    define(function() {
+    define(function () {
       return out$;
     });
   }
